@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select selectFirst onChange 行为演示</title>
+  <link rel="stylesheet" href="https://unpkg.com/amis@latest/sdk/sdk.css" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #108cee;
+      padding-bottom: 10px;
+    }
+    .demo-section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+    }
+    .demo-section h2 {
+      margin-top: 0;
+      color: #108cee;
+    }
+    .event-log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #108cee;
+      border-radius: 4px;
+    }
+    .event-log h3 {
+      margin-top: 0;
+      font-size: 14px;
+      color: #666;
+    }
+    .event-log pre {
+      margin: 5px 0;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 3px;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    .explanation {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fffbe6;
+      border-left: 4px solid #faad14;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+  <script src="https://unpkg.com/amis@latest/sdk/sdk.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Select 组件 selectFirst 不触发 onChange 行为演示</h1>
+    
+    <div class="demo-section">
+      <h2>演示 1: selectFirst 配置的行为</h2>
+      <div id="demo1"></div>
+      <div class="event-log">
+        <h3>onChange 事件日志：</h3>
+        <pre id="log1">等待事件触发...</pre>
+      </div>
+      <div class="explanation">
+        <strong>说明：</strong>表单初始化时，第一项会被自动选中，但不会触发 onChange 事件。只有手动选择其他选项时才会触发。
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>演示 2: 使用 onEvent.inited 监听初始化（推荐方案）</h2>
+      <div id="demo2"></div>
+      <div class="event-log">
+        <h3>事件日志：</h3>
+        <pre id="log2">等待事件触发...</pre>
+      </div>
+      <div class="explanation">
+        <strong>说明：</strong>使用 onEvent 的 inited 事件可以在表单初始化完成后获取自动选中的值。
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>演示 3: 用户手动选择触发 onChange</h2>
+      <div id="demo3"></div>
+      <div class="event-log">
+        <h3>onChange 事件日志：</h3>
+        <pre id="log3">等待事件触发...</pre>
+      </div>
+      <div class="explanation">
+        <strong>说明：</strong>没有配置 selectFirst，用户手动选择后会立即触发 onChange 事件。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const amisLib = amisRequire('amis');
+    const amisScoped = amisLib.embed;
+
+    let log1Count = 0;
+    let log2Count = 0;
+    let log3Count = 0;
+
+    function addLog(logId, message) {
+      const logElement = document.getElementById(logId);
+      const timestamp = new Date().toLocaleTimeString();
+      if (logElement.textContent === '等待事件触发...') {
+        logElement.textContent = '';
+      }
+      logElement.textContent += `[${timestamp}] ${message}\n`;
+    }
+
+    // 演示 1: selectFirst 配置
+    amisScoped(
+      '#demo1',
+      {
+        type: 'page',
+        body: {
+          type: 'form',
+          debug: true,
+          body: [
+            {
+              type: 'select',
+              name: 'category1',
+              label: '选择分类',
+              selectFirst: true,
+              options: [
+                { label: '选项 A', value: 'a' },
+                { label: '选项 B', value: 'b' },
+                { label: '选项 C', value: 'c' }
+              ],
+              onChange: `
+                window.log1Count = (window.log1Count || 0) + 1;
+                const logEl = document.getElementById('log1');
+                const timestamp = new Date().toLocaleTimeString();
+                if (logEl.textContent === '等待事件触发...') {
+                  logEl.textContent = '';
+                }
+                logEl.textContent += '[' + timestamp + '] onChange 触发 #' + window.log1Count + ' - 新值: ' + event.data.value + '\\n';
+              `
+            }
+          ]
+        }
+      },
+      {
+        data: {}
+      }
+    );
+
+    // 演示 2: 使用 onEvent.inited
+    amisScoped(
+      '#demo2',
+      {
+        type: 'page',
+        body: {
+          type: 'form',
+          debug: true,
+          body: [
+            {
+              type: 'select',
+              name: 'category2',
+              label: '选择分类',
+              selectFirst: true,
+              options: [
+                { label: '选项 A', value: 'a' },
+                { label: '选项 B', value: 'b' },
+                { label: '选项 C', value: 'c' }
+              ],
+              onEvent: {
+                inited: {
+                  actions: [
+                    {
+                      actionType: 'custom',
+                      script: `
+                        window.log2Count = (window.log2Count || 0) + 1;
+                        const logEl = document.getElementById('log2');
+                        const timestamp = new Date().toLocaleTimeString();
+                        if (logEl.textContent === '等待事件触发...') {
+                          logEl.textContent = '';
+                        }
+                        logEl.textContent += '[' + timestamp + '] inited 事件触发 - 初始值: ' + event.data.value + '\\n';
+                      `
+                    }
+                  ]
+                },
+                change: {
+                  actions: [
+                    {
+                      actionType: 'custom',
+                      script: `
+                        window.log2Count = (window.log2Count || 0) + 1;
+                        const logEl = document.getElementById('log2');
+                        const timestamp = new Date().toLocaleTimeString();
+                        logEl.textContent += '[' + timestamp + '] change 事件触发 - 新值: ' + event.data.value + '\\n';
+                      `
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        data: {}
+      }
+    );
+
+    // 演示 3: 无 selectFirst
+    amisScoped(
+      '#demo3',
+      {
+        type: 'page',
+        body: {
+          type: 'form',
+          debug: true,
+          body: [
+            {
+              type: 'select',
+              name: 'category3',
+              label: '选择分类',
+              options: [
+                { label: '选项 A', value: 'a' },
+                { label: '选项 B', value: 'b' },
+                { label: '选项 C', value: 'c' }
+              ],
+              onEvent: {
+                change: {
+                  actions: [
+                    {
+                      actionType: 'custom',
+                      script: `
+                        window.log3Count = (window.log3Count || 0) + 1;
+                        const logEl = document.getElementById('log3');
+                        const timestamp = new Date().toLocaleTimeString();
+                        if (logEl.textContent === '等待事件触发...') {
+                          logEl.textContent = '';
+                        }
+                        logEl.textContent += '[' + timestamp + '] change 事件触发 #' + window.log3Count + ' - 新值: ' + event.data.value + '\\n';
+                      `
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        data: {}
+      }
+    );
+  </script>
+</body>
+</html>
